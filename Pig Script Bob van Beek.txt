@@ -1,0 +1,20 @@
+--load orders.csv
+define CSVLoader org.apache.pig.piggybank.storage.CSVLoader();
+
+orderCSV= LOAD '/user/maria_dev/Diplomacy/orders.csv'
+   USING CSVLoader(',') AS
+           (game_id : int, unit_id : int, unit_order : chararray, location : chararray, 
+           target : chararray, target_dest : chararray, success : int, reason : chararray, turn_num : int);
+
+-- Filter the data on  target "Holland"
+filtered_data = FILTER orderCSV BY target == 'Holland';
+
+-- Group the data by location and generate the result
+grouped_data = FOREACH(GROUP filtered_data by location)
+				GENERATE group as location, MAX(filtered_data.(target)) as target, COUNT($1) as c;
+
+-- Order the data ASCENDING
+result = ORDER grouped_data BY location ASC;
+
+-- Dump data
+DUMP result
