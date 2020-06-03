@@ -1,0 +1,21 @@
+-- Hier wordt de CSVLoader gedefineerd. Door een CSVLoader te gebruiker vermijd ik problemen met ''.
+define CSVLoader org.apache.pig.piggybank.storage.CSVLoader();
+
+-- Hier wordt de order.csv file geladen en krijgen alle kolommen een datatype.
+orderCSV= LOAD '/user/maria_dev/Diplomacy/orders.csv'
+   USING CSVLoader(',') AS
+           (game_id : int, unit_id : int, unit_order : chararray, location : chararray, 
+           target : chararray, target_dest : chararray, success : int, reason : chararray, turn_num : int);
+
+-- De data wordt eerst gefilterd waar het target 'Holland' is.
+filtered_data = FILTER orderCSV BY target == 'Holland';
+
+-- De data wordt daarna gegroepeerd op location, en de correct output wordt gegenereerd.
+grouped_data = FOREACH(GROUP filtered_data by location)
+				GENERATE group as location, MAX(filtered_data.(target)) as target, COUNT($1) as c;
+
+-- De data wordt als laatste ASCENDING georderd.
+result = ORDER grouped_data BY location ASC;
+
+-- En het result wordt getoond. 
+DUMP result
